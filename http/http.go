@@ -2,12 +2,11 @@ package main
 
 import (
 	"context"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
-import log "github.com/sirupsen/logrus"
 
 func main()  {
-
 	if err := app(); err != nil {
 		log.WithError(err).Fatal("application failed with error")
 	}
