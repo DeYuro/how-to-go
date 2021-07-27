@@ -16,16 +16,13 @@ func pool()  {
 		},
 	}
 
-	strPool.Put("bar")
-
-	strPool.Put("baz")
-	strPool.Put("foo")
-	strPool.Put("doo")
-
-	item := strPool.Get()
+	pool1 := []string{"foo", "bar"}
+	strPool.Put(pool1)
+	item := strPool.Get().([]string)
 	fmt.Println(item)
+	item = append(item, "baz")
 	strPool.Put(item)
-	fmt.Println(strPool.Get())
+	strPool.Put([]string{"some", "values"})
 	fmt.Println(strPool.Get())
 	fmt.Println(strPool.Get())
 	fmt.Println(strPool.Get())
