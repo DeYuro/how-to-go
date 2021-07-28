@@ -8,9 +8,9 @@ import (
 )
 
 type svc interface {
-	checkFinish(ctx context.Context, cancelFunc context.CancelFunc)
+	checkFinish(ctx context.Context, errs chan<- error, cancelFunc context.CancelFunc)
 	getClient() *redis.Client // just for manual, may use repo pattern instead
-	demo(ctx context.Context, errs chan error)
+	demo(ctx context.Context, errs chan<- error)
 }
 
 type service struct {
@@ -70,7 +70,7 @@ func app() error  {
 
 	svc.demo(ctx, errs)
 
-	svc.checkFinish(ctx, cancel)
+	svc.checkFinish(ctx, errs, cancel)
 	select {
 	case <-ctx.Done():
 		fmt.Println("Finish by context")
@@ -81,7 +81,7 @@ func app() error  {
 }
 
 
-func (s service) demo(ctx context.Context, errs chan error) {
+func (s service) demo(ctx context.Context, errs chan<- error) {
 	cli := s.getClient()
 
 	err := cli.Set(ctx, "foo", "bar", 0).Err()
