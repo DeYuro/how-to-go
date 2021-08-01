@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package example.how-to-go.v1.structures;
-
-message Bar {
-    uint32 id   = 1;
-    string name = 2;
-}
