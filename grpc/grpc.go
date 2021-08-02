@@ -6,6 +6,7 @@ import (
 	"github.com/how-to-go/grpc/server"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"net"
 )
 
 //git submodule update --init
@@ -39,9 +40,15 @@ func app() error {
 func startGrpcServer(cancel context.CancelFunc) error {
 	grpcServer := grpc.NewServer()
 
-	fooService := server.NewServer()
+	proto.RegisterFooServiceServer(grpcServer, server.NewServer())
 
-	proto.RegisterFooServiceServer(grpcServer, fooService)
-
+	lis, err := net.Listen("tcp", "127.0.0.1:50051")
+	if err != nil {
+		return err
+	}
+	err = grpcServer.Serve(lis)
+	if err != nil {
+		return  err
+	}
 	return nil
 }
