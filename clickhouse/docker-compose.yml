@@ -1,12 +1,19 @@
-version: "2.2"
+version: "3"
 
 services:
-  client:
-    image: yandex/clickhouse-client
-    command: ['--host', 'server']
-    depends_on:
-      - server
   server:
     image: yandex/clickhouse-server
     ports:
       - 8123:8123
+    expose:
+      - 8123
+  client:
+    image: yandex/clickhouse-client
+    links:
+      - server
+    depends_on:
+      - server
+    entrypoint:
+      - /bin/sleep
+    command:
+      - infinity
