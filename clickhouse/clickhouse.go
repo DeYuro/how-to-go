@@ -4,11 +4,24 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"github.com/mailru/go-clickhouse"
 	_ "github.com/mailru/go-clickhouse"
 	"log"
+	"math/rand"
+	"time"
 )
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	if err := app(); err != nil {
 		log.Fatal("some err in app:", err)
 	}
@@ -35,6 +48,9 @@ func startApp(cancel context.CancelFunc) error {
 	if err := migrate(); err != nil {
 		return err
 	}
+	if err := sqlEx(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -49,33 +65,39 @@ func sqlEx() error{
 		return err
 	}
 
-	stmt, err := db.Prepare(`
+	tx, _ := db.Begin()
+	stmt, err := tx.Prepare(`
 		INSERT INTO example (
 		    id,
+			sql_lib,
 			two_letter,
 			array,
 			event_day,
-			event_dateTime,
-		) VALUES (
-			?, ?, ?, ?, ?
-		)`)
+			event_dateTime
+		) VALUES (?, ?, ?, ?, ?, ?)`)
+
+	if err != nil {
+		return err
+	}
 
 	for i := 0; i < 100000; i++ {
-		if _, err := stmt.Exec(
-			"RU",
-			10+i,
-			100+i,
-			clickhouse.Array([]int16{1, 2, 3}),
+		if r, err := stmt.Exec(
+			i,
+			"database/sql",
+			randSeq(2),
+			clickhouse.Array(rand.Perm(10)),
 			clickhouse.Date(time.Now()),
 			time.Now(),
 		); err != nil {
+			_ = r
 			return err
 		}
 	}
 
-	if err := db.Commit(); err != nil {
+	if err = tx.Commit(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -109,7 +131,8 @@ func migrate() error  {
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS example (
-		    id        UInt8,
+		    id         Int16,
+		    sql_lib        String,
 			two_letter FixedString(2),
 			array           Array(Int16),
 			event_day   	Date,
