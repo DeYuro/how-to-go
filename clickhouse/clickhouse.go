@@ -49,6 +49,33 @@ func sqlEx() error{
 		return err
 	}
 
+	stmt, err := db.Prepare(`
+		INSERT INTO example (
+		    id,
+			two_letter,
+			array,
+			event_day,
+			event_dateTime,
+		) VALUES (
+			?, ?, ?, ?, ?
+		)`)
+
+	for i := 0; i < 100000; i++ {
+		if _, err := stmt.Exec(
+			"RU",
+			10+i,
+			100+i,
+			clickhouse.Array([]int16{1, 2, 3}),
+			clickhouse.Date(time.Now()),
+			time.Now(),
+		); err != nil {
+			return err
+		}
+	}
+
+	if err := db.Commit(); err != nil {
+		return err
+	}
 	return nil
 }
 
