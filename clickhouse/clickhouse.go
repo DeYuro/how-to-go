@@ -48,14 +48,18 @@ func startApp(cancel context.CancelFunc) error {
 	if err := migrate(); err != nil {
 		return err
 	}
-	if err := sqlEx(); err != nil {
+	if err := sqlInsert(); err != nil {
+		return err
+	}
+	if err := sqlxInsert(); err != nil {
 		return err
 	}
 
+	cancel()
 	return nil
 }
 
-func sqlEx() error{
+func sqlInsert() error{
 	db, err := sql.Open("clickhouse", "http://127.0.0.1:8123/default")
 	if err != nil {
 		return err
@@ -93,15 +97,10 @@ func sqlEx() error{
 			return err
 		}
 	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
-func sqlxEx() error {
+func sqlxInsert() error {
 	db, err := sqlx.Open("clickhouse", "http://127.0.0.1:8123/default")
 	if err != nil {
 		return err
@@ -111,7 +110,33 @@ func sqlxEx() error {
 		return err
 	}
 
-	return nil
+	tx := db.MustBegin()
+
+	stmt, err := tx.Preparex(`
+		INSERT INTO example (
+		    id,
+			sql_lib,
+			two_letter,
+			array,
+			event_day,
+			event_dateTime
+		) VALUES (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < 100000; i++ {
+		 _ = stmt.MustExec(
+			100000 + i,
+			"github.com/jmoiron/sqlx",
+			randSeq(2),
+			clickhouse.Array(rand.Perm(10)),
+			clickhouse.Date(time.Now()),
+			time.Now(),
+		)
+	}
+
+	return tx.Commit()
 }
 
 //migrate migrations
@@ -131,7 +156,7 @@ func migrate() error  {
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS example (
-		    id         Int16,
+		    id             UInt32,
 		    sql_lib        String,
 			two_letter FixedString(2),
 			array           Array(Int16),
