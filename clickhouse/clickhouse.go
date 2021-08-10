@@ -46,7 +46,6 @@ func app() error {
 }
 
 func startApp(cancel context.CancelFunc) error {
-	defer cancel()
 
 	if err := migrate(); err != nil {
 		return err
@@ -62,9 +61,14 @@ func startApp(cancel context.CancelFunc) error {
 		return err
 	}
 
+	if err := sqlxSelect(); err != nil {
+		return err
+	}
+
 	if err := drop(); err != nil {
 		return err
 	}
+	cancel()
 
 	return nil
 }
@@ -158,13 +162,51 @@ func sqlSelect() error {
 		}
 
 		fmt.Printf("Id: %d, Code: %s by %s lib QueryRow \n", id, twoLetter, sqlLib)
-
 	}
+
 	return nil
 }
 
-func sqlxSelect()  {
+func sqlxSelect() error {
+	db, err := sqlx.Open("clickhouse", "http://127.0.0.1:8123/default?debug=1")
 
+	if err != nil {
+		return err
+	}
+
+	defer db.Close() // ignore error because example
+
+	if err = db.Ping(); err != nil {
+		return err
+	}
+
+	// Upper case is important! Fields must be exportable
+	type row struct {
+		Id uint32   `db:"id"`
+		Code string `db:"two_letter"`
+		Lib string  `db:"sql_lib"`
+	}
+
+	var item row
+	var res []row
+
+	err = db.Select(&res, `SELECT id, two_letter, sql_lib FROM example WHERE sql_lib = 'github.com/jmoiron/sqlx' limit 10`)
+	if err != nil {
+		return err
+	}
+
+	for _, row := range res {
+		fmt.Printf("Id: %d, Code: %s by %s lib - *sqlx.Db.Select(...) \n", row.Id, row.Code, row.Lib)
+	}
+
+	err = db.Get(&item, `SELECT id, two_letter, sql_lib FROM example WHERE id > 100999`)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Id: %d, Code: %s by %s lib - *sqlx.Db.Get(...) \n", item.Id, item.Code, item.Lib)
+
+	return err
 }
 
 func sqlxInsert() error {
@@ -247,7 +289,7 @@ func drop() error {
 	}
 
 	_, err = db.Exec(`
-		DROP TABLE IF NOT EXISTS example
+		DROP TABLE IF EXISTS example
 	`)
 
 	return err
