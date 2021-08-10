@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"github.com/mailru/go-clickhouse"
 	_ "github.com/mailru/go-clickhouse"
@@ -45,6 +46,8 @@ func app() error {
 }
 
 func startApp(cancel context.CancelFunc) error {
+	defer cancel()
+
 	if err := migrate(); err != nil {
 		return err
 	}
@@ -55,7 +58,14 @@ func startApp(cancel context.CancelFunc) error {
 		return err
 	}
 
-	cancel()
+	if err := sqlSelect(); err != nil {
+		return err
+	}
+
+	if err := drop(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -97,7 +107,64 @@ func sqlInsert() error{
 			return err
 		}
 	}
-	return tx.Commit()
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return db.Close()
+}
+
+func sqlSelect() error {
+	db, err := sqlx.Open("clickhouse", "http://127.0.0.1:8123/default")
+	if err != nil {
+		return err
+	}
+	defer db.Close() // ignore error because example
+
+	if err = db.Ping(); err != nil {
+		return err
+	}
+
+	rows, err := db.Query(`SELECT id, two_letter FROM example WHERE sql_lib = 'database/sql' limit 10`)
+	if err != nil {
+		return  err
+	}
+	defer rows.Close() // ignore error because example
+
+	for rows.Next() {
+		var (
+			id uint32
+			twoLetter string
+		)
+
+		if err = rows.Scan(&id, &twoLetter); err != nil {
+			return err
+		}
+
+		fmt.Printf("Id: %d, Code: %s by database/sql rows.Next() \n ", id, twoLetter)
+	}
+
+	// Single row
+	row := db.QueryRow(`SELECT id, two_letter, sql_lib FROM example WHERE id > 999`)
+
+	if row != nil {
+		var (
+			id uint32
+			twoLetter, sqlLib string
+		)
+		if err = row.Scan(&id, &twoLetter, &sqlLib); err != nil {
+			return err
+		}
+
+		fmt.Printf("Id: %d, Code: %s by %s lib QueryRow \n", id, twoLetter, sqlLib)
+
+	}
+	return nil
+}
+
+func sqlxSelect()  {
+
 }
 
 func sqlxInsert() error {
@@ -105,6 +172,7 @@ func sqlxInsert() error {
 	if err != nil {
 		return err
 	}
+	defer db.Close() // ignore error because example
 
 	if err = db.Ping(); err != nil {
 		return err
@@ -146,28 +214,41 @@ func migrate() error  {
 		return err
 	}
 
-	defer func() {
-		_ = db.Close()
-	}()
-	//
+	defer db.Close() // ignore error because example
+
 	if err = db.Ping(); err != nil {
 		return err
 	}
 
 	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS example (
-		    id             UInt32,
-		    sql_lib        String,
-			two_letter FixedString(2),
+		    id              UInt32,
+		    sql_lib         String,
+			two_letter 		FixedString(2),
 			array           Array(Int16),
 			event_day   	Date,
 			event_dateTime  DateTime
 		) engine=Memory
 	`)
 
+	return err
+}
+
+func drop() error {
+	db, err := sql.Open("clickhouse", "http://127.0.0.1:8123/default")
 	if err != nil {
 		return err
 	}
 
-	return nil
+	defer db.Close() // ignore error because example
+
+	if err = db.Ping(); err != nil {
+		return err
+	}
+
+	_, err = db.Exec(`
+		DROP TABLE IF NOT EXISTS example
+	`)
+
+	return err
 }
