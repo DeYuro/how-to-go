@@ -3,6 +3,7 @@ module github.com/how-to-go
 go 1.16
 
 require (
+	github.com/confluentinc/confluent-kafka-go v1.7.0
 	github.com/go-redis/redis/v8 v8.11.1
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mailru/go-clickhouse v1.6.0
