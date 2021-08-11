@@ -1,3 +1,6 @@
 [submodule "grpc/api/dummy-proto"]
 	path = grpc/api/dummy-proto
 	url = https://github.com/DeYuro/dummy-proto
+[submodule "kafka/sub"]
+	path = kafka/sub
+	url = https://github.com/wurstmeister/kafka-docker.git
