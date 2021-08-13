@@ -9,6 +9,7 @@ func main() {
 	go producer.Produce()
 	go consumer.Consume()
 
+	println("foo")
 	for {
 
 	}

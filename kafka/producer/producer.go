@@ -28,7 +28,7 @@ func Produce()  {
 	}()
 
 	// Produce messages to topic (asynchronously)
-	topic := "myTopic"
+	topic := "exampleTopic"
 	for _, word := range []string{"Welcome", "to", "the", "Confluent", "Kafka", "Golang", "client"} {
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
