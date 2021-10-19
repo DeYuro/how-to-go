@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/hashicorp/consul/api"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 )
+
+const IP string = "192.168.22.154" // Local host IP
 
 func main()  {
 	if err := app(); err != nil {
@@ -43,13 +46,13 @@ func consulRegisterService(client *api.Client) error {
 		ID:                "MyAwesomeService1",
 		Name:              "MyAwesomeService",
 		Tags:              []string{"my", "awesome", "service"},
-		Address:           "localhost",
+		Address:           "192.168.1.44",
 		Port:              8080,
 		Check:             &api.AgentServiceCheck{
 			Name:                           "HEALTH CHECK",
 			Interval:                       "2s",
 			Timeout:                        "1s",
-			HTTP:                           "http://localhost:8080/health",
+			HTTP:                           fmt.Sprintf("http://%s:8080/health", IP),
 		},
 	}
 	return agent.ServiceRegister(service)
@@ -89,7 +92,7 @@ func startServer() error {
 	mux.HandleFunc("/health", hcHandler)
 
 
-	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:8080", IP), mux); err != nil {
 		return err
 	}
 
