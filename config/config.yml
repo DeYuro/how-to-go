@@ -1,0 +1,7 @@
+foo: &link
+  text: lorem ipsum
+  numbers: 42
+  interval: 4s
+
+bar:
+  foo: link
