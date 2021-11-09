@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/configor"
 	"github.com/k0kubun/pp"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"os"
 	"time"
 )
@@ -49,18 +50,57 @@ func app() error {
 }
 
 func start(cancel context.CancelFunc) error {
-	pp.Println(loadConfig("./config.yml"))
+	fmt.Println("Use gopkg.in/yaml.v2")
+	config, err := loadConfigYml("config/config.yml")
+	if err != nil {
+		return err
+	}
+
+	pp.Println(config)
+
+	fmt.Printf("Now sleep %f seconds\n", config.Foo.Interval.Seconds())
+	time.Sleep(config.Foo.Interval)
+	fmt.Println("sleep over")
+
+
+	fmt.Println("Use github.com/jinzhu/configor")
+	config, err = loadConfigConfigor("config/config.yml")
+	if err != nil {
+		return err
+	}
+
+	pp.Println(config)
+
+	fmt.Printf("Now sleep %f seconds\n", config.Foo.Interval.Seconds())
+	time.Sleep(config.Foo.Interval)
+	fmt.Println("sleep over")
+
 	return nil
 }
 
-func loadConfig(pathToConfig string) *Config {
+func loadConfigConfigor(pathToConfig string) (*Config, error) {
 	config := new(Config)
 
 	err := configor.Load(config, pathToConfig)
 	if err != nil {
-		fmt.Println("Failed to load configuration file " + err.Error())
-		os.Exit(1)
+		return nil,err
 	}
 
-	return config
+	return config, nil
+}
+
+func loadConfigYml(pathToConfig string) (*Config, error) {
+	config := new(Config)
+	file, err := os.Open(pathToConfig)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	d := yaml.NewDecoder(file)
+
+	if err := d.Decode(&config); err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
