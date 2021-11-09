@@ -1,7 +1,8 @@
-foo: &link
+foo: &foo_link
   text: lorem ipsum
   numbers: 42
   interval: 4s
 
 bar:
-  foo: link
+  foo: *foo_link
+
