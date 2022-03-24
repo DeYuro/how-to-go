@@ -5,11 +5,11 @@ import (
 	"sync"
 )
 
-func main()  {
+func main() {
 	pool()
 }
 
-func pool()  {
+func pool() {
 	var strPool = sync.Pool{
 		New: func() interface{} {
 			return []string{}
