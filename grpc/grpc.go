@@ -14,7 +14,7 @@ import (
 //protoc-gen-go v1.27.1
 //protoc -I /usr/local/include -I /Users/droot/go/src/github.com/how-to-go/grpc/api/dummy-proto  --go_out=generated --go_opt=paths=source_relative --go-grpc_out=generated --go-grpc_opt=paths=source_relative proto/v1/foo.proto proto/v1/structures.proto
 //Or use some generator
-func main()  {
+func main() {
 	if err := app(); err != nil {
 		log.WithError(err).Fatal("application failed with error")
 	}
@@ -48,7 +48,7 @@ func startGrpcServer(cancel context.CancelFunc) error {
 	}
 	err = grpcServer.Serve(lis)
 	if err != nil {
-		return  err
+		return err
 	}
 	return nil
 }
