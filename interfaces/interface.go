@@ -37,11 +37,11 @@ type AI struct {
 	MaxHp int
 }
 
-func (a AI) getHp() int {
+func (a *AI) getHp() int {
 	return a.Hp
 }
 
-func (a AI) RestoreHp() {
+func (a *AI) RestoreHp() {
 	a.Hp = a.MaxHp
 }
 
