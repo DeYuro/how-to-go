@@ -16,7 +16,10 @@ func Consume()  {
 		panic(err)
 	}
 
-	c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	//c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	if err := c.SubscribeTopics([]string{"exampleTopic"}, nil); err != nil {
+		fmt.Println(err.Error())
+	}
 
 	for {
 		msg, err := c.ReadMessage(-1)
