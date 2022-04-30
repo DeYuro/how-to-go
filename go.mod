@@ -17,6 +17,6 @@ require (
 
 require (
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
-	golang.org/x/exp v0.0.0-20220407100705-7b9b53b0aca4 // indirect
+	golang.org/x/exp v0.0.0-20220428152302-39d4317da171 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
