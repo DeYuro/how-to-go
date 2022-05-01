@@ -2,9 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
-	"golang.org/x/exp/constraints"
-	"log"
 )
 
 type FighterType string
@@ -14,7 +11,11 @@ const (
 	ai    FighterType = "ai"
 )
 
-type Fighter[HP constraints.Unsigned] interface {
+type HeathPoint interface {
+	~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uint
+}
+
+type Fighter[HP HeathPoint] interface {
 	getHp() HP
 	restoreHp()
 	takeDamage(damage HP)
@@ -22,7 +23,7 @@ type Fighter[HP constraints.Unsigned] interface {
 }
 
 //Human value type receiver methods
-type Human[HP constraints.Unsigned] struct {
+type Human[HP HeathPoint] struct {
 	Hp          HP
 	MaxHp       HP
 	RestoreStep HP
@@ -32,7 +33,7 @@ func (h Human[HP]) getHp() HP {
 	return h.Hp
 }
 
-func (h Human) restoreHp() {
+func (h Human[HP]) restoreHp() {
 	if h.MaxHp < (h.Hp + h.RestoreStep) {
 		h.Hp += h.RestoreStep
 	}
@@ -48,13 +49,13 @@ func (h Human[HP]) takeDamage(damage HP) {
 	h.Hp -= damage
 }
 
-// void pointer receiver invalid for human{....}  but valid for &human{...} other methods valid also
-func (h *Human) void() {
+//void pointer receiver invalid for human{....}  but valid for &human{...} other methods valid also
+func (h *Human[HP]) void() {
 
 }
 
 // AI pointer type receiver methods
-type AI[HP constraints.Unsigned] struct {
+type AI[HP HeathPoint] struct {
 	Hp    HP
 	MaxHp HP
 }
@@ -63,8 +64,8 @@ func (a *AI[HP]) getHp() HP {
 	return a.Hp
 }
 
-func (a *AI) restoreHp() {
-	a.Hp = a.MaxHp - 1
+func (a *AI[HP]) restoreHp() {
+	a.Hp = a.MaxHp
 }
 
 func (a *AI[HP]) takeDamage(damage HP) {
@@ -76,49 +77,25 @@ func (a *AI[HP]) takeDamage(damage HP) {
 }
 
 // void value receiver valid for &AI{...}
-func (a AI) void() {
+func (a AI[HP]) void() {
 
 }
-func createFighter[HP constraints.Unsigned](fighterType FighterType, maxHp, restoreStep HP) (Fighter, error) {
+
+func createFighter[HP HeathPoint](fighterType FighterType, maxHp, restoreStep HP) (Fighter[HP], error) {
 	switch fighterType {
 	case human:
-		return &Human[]{
+		return &Human[HP]{
 			Hp:          maxHp,
 			MaxHp:       maxHp,
 			RestoreStep: restoreStep,
 		}, nil
 	case ai:
-		return &AI{
+
+		return &AI[HP]{
 			Hp:    maxHp,
 			MaxHp: maxHp,
 		}, nil
 	}
 
 	return nil, errors.New("wrong type")
-}
-
-func main() {
-	player, err := createFighter(human, 100, 10)
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	fmt.Printf("Human(value receiver) created and got have: %d\n", player.getHp())       // 100
-	player.takeDamage(42)                                                                // pointless coz value receiver
-	fmt.Printf("Human(value receiver) take damage and have HP: %d\n", player.getHp())    // 100
-	player.restoreHp()                                                                   // pointless coz value receiver
-	fmt.Printf("Human(value receiver) restore health and have HP: %d\n", player.getHp()) // 100
-
-	bot, err := createFighter(ai, 1000, 10)
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	fmt.Printf("AI(pointer receiver) created and got have: %d\n", bot.getHp()) //1000
-	bot.takeDamage(444)
-	fmt.Printf("AI(pointer receiver) take damage and have HP: %d\n", bot.getHp()) //556
-	bot.restoreHp()
-	fmt.Printf("AI(pointer receiver) restore health and have HP: %d\n", bot.getHp()) //999
 }
