@@ -1,6 +1,10 @@
 package main
 
-import "golang.org/x/exp/constraints"
+import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/constraints"
+)
 
 func main() {
 	s, ss := "a", []string{"a", "b"}
@@ -18,6 +22,30 @@ func main() {
 	printErr(ResourceNotFoundError)
 	printErr(EmptyValueError)
 	printErr(ServiceError)
+
+	player, err := createFighter[uint](human, 100, 10)
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Printf("Human(value receiver) created and got have: %d\n", player.getHp())       // 100
+	player.takeDamage(42)                                                                // pointless coz value receiver
+	fmt.Printf("Human(value receiver) take damage and have HP: %d\n", player.getHp())    // 100
+	player.restoreHp()                                                                   // pointless coz value receiver
+	fmt.Printf("Human(value receiver) restore health and have HP: %d\n", player.getHp()) // 100
+
+	bot, err := createFighter[uint](ai, 1000, 10)
+
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	fmt.Printf("AI(pointer receiver) created and got have: %d\n", bot.getHp()) //1000
+	bot.takeDamage(444)
+	fmt.Printf("AI(pointer receiver) take damage and have HP: %d\n", bot.getHp()) //556
+	bot.restoreHp()
+	fmt.Printf("AI(pointer receiver) restore health and have HP: %d\n", bot.getHp()) //999
 }
 
 func contains[T comparable](value T, sliceOfValue []T) bool {
